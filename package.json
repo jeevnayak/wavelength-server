@@ -1,0 +1,10 @@
+{
+  "name": "wavelength",
+  "version": "1.0.0",
+  "description": "Wavelength Server",
+  "main": "app.js",
+  "author": "Rajeev Nayak",
+  "dependencies": {
+    "express": "^4.14.0"
+  }
+}
