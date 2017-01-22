@@ -1,12 +1,19 @@
+var models = require("./models");
+
 var resolvers = {
   Query: {
-    user(obj, args, context, info) {
-      return {
-        id: args.id,
-        name: "Rajeev Nayak",
-        firstName: "Rajeev",
-        lastName: "Nayak"
-      };
+    user(_, args) {
+      return models.User.findById(args.id);
+    },
+  },
+  Mutation: {
+    updateUser(_, args) {
+      return models.User.findById(args.id).then(function(user) {
+        if (!user) {
+          user = models.User.build({id: args.id});
+        }
+        return user.update(args);
+      });
     },
   },
 };

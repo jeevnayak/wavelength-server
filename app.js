@@ -5,6 +5,7 @@ var graphqlTools = require("graphql-tools");
 
 var schema = require("./data/schema");
 var resolvers = require("./data/resolvers");
+var models = require("./data/models");
 
 var app = express();
 
@@ -21,6 +22,8 @@ app.use("/graphiql", graphqlServerExpress.graphiqlExpress({
   endpointURL: "/graphql"
 }));
 
-app.listen(5000, function() {
-  console.log("App listening on port 5000");
+models.db.sync({force: true}).then(function() {
+  app.listen(5000, function() {
+    console.log("App listening on port 5000");
+  });
 });
