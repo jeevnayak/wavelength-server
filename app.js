@@ -22,7 +22,7 @@ app.use("/graphiql", graphqlServerExpress.graphiqlExpress({
   endpointURL: "/graphql"
 }));
 
-models.db.sync({force: true}).then(function() {
+models.db.sync().then(function() {
   app.listen(5000, function() {
     console.log("App listening on port 5000");
   });

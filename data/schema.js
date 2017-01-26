@@ -5,6 +5,23 @@ type User {
   firstName: String!
   lastName: String!
   fbToken: String!
+  partnerships: [Partnership]!
+}
+
+type Partnership {
+  id: Int!
+  users: [User]!
+  games: [Game]!
+}
+
+type Game {
+  id: Int!
+  word: String!
+  cluerId: String!
+  clues: String
+  guesses: String
+  replayed: Boolean
+  partnership: Partnership!
 }
 
 type Query {
@@ -19,6 +36,11 @@ type Mutation {
     lastName: String!,
     fbToken: String!
   ) : User
+
+  newGame(
+    cluerId: String!,
+    guesserId: String!,
+  ) : Game
 }
 
 schema {
