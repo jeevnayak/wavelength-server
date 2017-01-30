@@ -11,6 +11,7 @@ type User {
 type Partnership {
   id: Int!
   users: [User]!
+  partner(userId: String!): User!
   games: [Game]!
 }
 
@@ -18,6 +19,7 @@ type Game {
   id: Int!
   word: String!
   cluerId: String!
+  isCluer(userId: String!): Boolean!
   clues: String
   guesses: String
   replayed: Boolean
@@ -26,6 +28,7 @@ type Game {
 
 type Query {
   user(id: String!): User
+  partnership(id: Int!): Partnership
 }
 
 type Mutation {

@@ -6,6 +6,9 @@ var resolvers = {
     user(_, args) {
       return models.User.findById(args.id);
     },
+    partnership(_, args) {
+      return models.Partnership.findById(args.id);
+    },
   },
   User: {
     partnerships(obj) {
@@ -29,8 +32,17 @@ var resolvers = {
         }
       });
     },
+    partner(obj, args) {
+      var partnerId = (obj.user1Id === args.userId) ? obj.user2Id : obj.user1Id;
+      return models.User.findById(partnerId);
+    },
     games(obj) {
       return obj.getGames();
+    },
+  },
+  Game: {
+    isCluer(obj, args) {
+      return obj.cluerId === args.userId;
     },
   },
   Mutation: {
