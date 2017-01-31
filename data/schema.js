@@ -20,8 +20,8 @@ type Game {
   word: String!
   cluerId: String!
   isCluer(userId: String!): Boolean!
-  clues: String
-  guesses: String
+  clues: [String]!
+  guesses: [String]!
   replayed: Boolean
   partnership: Partnership!
 }
@@ -43,6 +43,11 @@ type Mutation {
   newGame(
     cluerId: String!,
     guesserId: String!,
+  ) : Game
+
+  giveClues(
+    gameId: Int!,
+    clues: [String]!,
   ) : Game
 }
 

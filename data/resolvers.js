@@ -44,6 +44,12 @@ var resolvers = {
     isCluer(obj, args) {
       return obj.cluerId === args.userId;
     },
+    clues(obj) {
+      return obj.clues ? obj.clues.split(",") : [];
+    },
+    guesses(obj) {
+      return obj.guesses ? obj.guesses.split(",") : [];
+    },
   },
   Mutation: {
     updateUser(_, args) {
@@ -83,6 +89,13 @@ var resolvers = {
             return createGame(partnership);
           });
         }
+      });
+    },
+    giveClues(_, args) {
+      return models.Game.findById(args.gameId).then(function(game) {
+        return game.update({
+          clues: args.clues.join(",")
+        });
       });
     },
   }
