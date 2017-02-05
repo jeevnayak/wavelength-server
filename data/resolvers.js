@@ -1,6 +1,7 @@
 var Sequelize = require("sequelize");
 
 var models = require("./models");
+var notifications = require("../notifications");
 var words = require("./words");
 
 var resolvers = {
@@ -107,12 +108,18 @@ var resolvers = {
     },
     giveClues(_, args) {
       return models.Game.findById(args.gameId).then(function(game) {
-        return game.update({clues: args.clues});
+        return game.update({clues: args.clues}).then(function(game) {
+          notifications.notifyCluesGiven(game);
+          return game;
+        });
       });
     },
     makeGuesses(_, args) {
       return models.Game.findById(args.gameId).then(function(game) {
-        return game.update({guesses: args.guesses});
+        return game.update({guesses: args.guesses}).then(function(game) {
+          notifications.notifyGuessesMade(game);
+          return game;
+        });
       });
     },
   }
