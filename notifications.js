@@ -24,13 +24,14 @@ var notifyTurnEnded = function(game, cluesGiven) {
         }
       });
       if (recipient.pushTokens) {
-        recipient.pushTokens.forEach(function(pushToken) {
-          exponent.sendPushNotificationsAsync([{
+        var notifications = recipient.pushTokens.map(function(pushToken) {
+          return {
             to: pushToken,
             sound: "default",
             body: sender.firstName + " just went, it's your turn!"
-          }]);
+          };
         });
+        exponent.sendPushNotificationsAsync(notifications);
       }
     })
   });
