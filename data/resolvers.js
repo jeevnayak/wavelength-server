@@ -47,10 +47,10 @@ var resolvers = {
       return obj.cluerId === args.userId;
     },
     clues(obj) {
-      return obj.clues ? obj.clues.split(",") : [];
+      return obj.clues || [];
     },
     guesses(obj) {
-      return obj.guesses ? obj.guesses.split(",") : [];
+      return obj.guesses || [];
     },
   },
   Mutation: {
@@ -60,6 +60,18 @@ var resolvers = {
           user = models.User.build({id: args.id});
         }
         return user.update(args);
+      });
+    },
+    addPushToken(_, args) {
+      return models.User.findById(args.userId).then(function(user) {
+        if (user.pushTokens && user.pushTokens.includes(args.pushToken)) {
+          return user;
+        } else {
+          return user.update({
+            pushTokens: user.pushTokens ?
+              user.pushTokens.concat([args.pushToken]) : [args.pushToken]
+          });
+        }
       });
     },
     newGame(_, args) {
@@ -95,16 +107,12 @@ var resolvers = {
     },
     giveClues(_, args) {
       return models.Game.findById(args.gameId).then(function(game) {
-        return game.update({
-          clues: args.clues.join(",")
-        });
+        return game.update({clues: args.clues});
       });
     },
     makeGuesses(_, args) {
       return models.Game.findById(args.gameId).then(function(game) {
-        return game.update({
-          guesses: args.guesses.join(",")
-        });
+        return game.update({guesses: args.guesses});
       });
     },
   }

@@ -10,7 +10,8 @@ const User = db.define("user", {
   name: Sequelize.STRING,
   firstName: Sequelize.STRING,
   lastName: Sequelize.STRING,
-  fbToken: Sequelize.STRING
+  fbToken: Sequelize.STRING,
+  pushTokens: Sequelize.ARRAY(Sequelize.STRING)
 });
 
 const Partnership = db.define("partnership", {
@@ -51,8 +52,8 @@ const Game = db.define("game", {
     }
   },
   word: Sequelize.STRING,
-  clues: Sequelize.STRING,
-  guesses: Sequelize.STRING,
+  clues: Sequelize.ARRAY(Sequelize.STRING),
+  guesses: Sequelize.ARRAY(Sequelize.STRING),
   replayed: Sequelize.BOOLEAN
 });
 

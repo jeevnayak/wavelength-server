@@ -40,6 +40,11 @@ type Mutation {
     fbToken: String!
   ) : User
 
+  addPushToken(
+    userId: String!,
+    pushToken: String!
+  ) : User
+
   newGame(
     cluerId: String!,
     guesserId: String!,
