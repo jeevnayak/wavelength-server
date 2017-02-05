@@ -98,6 +98,13 @@ var resolvers = {
         });
       });
     },
+    makeGuesses(_, args) {
+      return models.Game.findById(args.gameId).then(function(game) {
+        return game.update({
+          guesses: args.guesses.join(",")
+        });
+      });
+    },
   }
 };
 

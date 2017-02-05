@@ -49,6 +49,11 @@ type Mutation {
     gameId: Int!,
     clues: [String]!,
   ) : Game
+
+  makeGuesses(
+    gameId: Int!,
+    guesses: [String]!,
+  ) : Game
 }
 
 schema {
