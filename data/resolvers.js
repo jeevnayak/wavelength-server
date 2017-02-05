@@ -1,5 +1,7 @@
-var models = require("./models");
 var Sequelize = require("sequelize");
+
+var models = require("./models");
+var words = require("./words");
 
 var resolvers = {
   Query: {
@@ -73,7 +75,7 @@ var resolvers = {
       }).then(function(partnership) {
         var createGame = function(partnership) {
           return models.Game.create({
-            word: "EXAMPLE",
+            word: words[Math.floor(Math.random() * words.length)],
             cluerId: args.cluerId,
             partnershipId: partnership.id
           });
