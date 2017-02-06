@@ -12,6 +12,9 @@ var resolvers = {
     partnership(_, args) {
       return models.Partnership.findById(args.id);
     },
+    game(_, args) {
+      return models.Game.findById(args.id);
+    },
   },
   User: {
     partnerships(obj) {

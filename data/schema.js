@@ -29,6 +29,7 @@ type Game {
 type Query {
   user(id: String!): User
   partnership(id: Int!): Partnership
+  game(id: Int!): Game
 }
 
 type Mutation {

@@ -24,11 +24,18 @@ var notifyTurnEnded = function(game, cluesGiven) {
         }
       });
       if (recipient.pushTokens) {
+        var message = cluesGiven ?
+          sender.firstName + " just went, it's your turn!" :
+          sender.firstName + " just finished, see what happened!"
         var notifications = recipient.pushTokens.map(function(pushToken) {
           return {
             to: pushToken,
             sound: "default",
-            body: sender.firstName + " just went, it's your turn!"
+            body: message,
+            data: {
+              gameId: game.id,
+              cluesGiven: cluesGiven
+            }
           };
         });
         exponent.sendPushNotificationsAsync(notifications);
