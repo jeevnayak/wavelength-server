@@ -8,6 +8,7 @@ var resolvers = require("./data/resolvers");
 var models = require("./data/models");
 
 var app = express();
+app.set("port", process.env.PORT || 5000);
 
 var executableSchema = graphqlTools.makeExecutableSchema({
   typeDefs: schema,
@@ -23,7 +24,7 @@ app.use("/graphiql", graphqlServerExpress.graphiqlExpress({
 }));
 
 models.db.sync().then(function() {
-  app.listen(5000, function() {
-    console.log("App listening on port 5000");
+  app.listen(app.get("port"), function() {
+    console.log("App listening on port", app.get("port"));
   });
 });
