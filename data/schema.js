@@ -6,6 +6,7 @@ type User {
   lastName: String!
   fbToken: String!
   partnerships: [Partnership]!
+  dailyChallengeInfo: DailyChallengeInfo!
 }
 
 type Partnership {
@@ -24,6 +25,17 @@ type Game {
   guesses: [String]!
   replayed: Boolean
   partnership: Partnership!
+}
+
+type DailyChallengeInfo {
+  incomingRequests: [DailyChallengeRequest]!
+  outgoingRequests: [DailyChallengeRequest]!
+  games: [Game]!
+}
+
+type DailyChallengeRequest {
+  id: Int!
+  partner(userId: String!): User!
 }
 
 type Query {
@@ -60,6 +72,15 @@ type Mutation {
     gameId: Int!,
     guesses: [String]!,
   ) : Game
+
+  sendDailyChallengeRequest(
+    fromUserId: String!,
+    toUserId: String!,
+  ) : DailyChallengeRequest
+
+  acceptDailyChallengeRequest(
+    requestId: Int!,
+  ) : [Game]
 }
 
 schema {

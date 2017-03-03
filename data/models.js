@@ -59,7 +59,69 @@ const Game = db.define("game", {
 
 Partnership.hasMany(Game);
 
+const DailyChallengeRequest = db.define("daily_challenge_request", {
+  id: {
+    type: Sequelize.INTEGER,
+    primaryKey: true,
+    autoIncrement: true
+  },
+  date: Sequelize.STRING,
+  fromUserId: {
+    type: Sequelize.STRING,
+    references: {
+      model: User,
+      key: "id"
+    }
+  },
+  toUserId: {
+    type: Sequelize.STRING,
+    references: {
+      model: User,
+      key: "id"
+    }
+  },
+});
+
+const DailyChallengeEntry = db.define("daily_challenge_entry", {
+  id: {
+    type: Sequelize.INTEGER,
+    primaryKey: true,
+    autoIncrement: true
+  },
+  date: Sequelize.STRING,
+  user1Id: {
+    type: Sequelize.STRING,
+    references: {
+      model: User,
+      key: "id"
+    }
+  },
+  user2Id: {
+    type: Sequelize.STRING,
+    references: {
+      model: User,
+      key: "id"
+    }
+  },
+  game1Id: {
+    type: Sequelize.INTEGER,
+    references: {
+      model: Game,
+      key: "id"
+    }
+  },
+  game2Id: {
+    type: Sequelize.INTEGER,
+    references: {
+      model: Game,
+      key: "id"
+    }
+  },
+});
+
 module.exports.db = db
 module.exports.User = db.models.user
 module.exports.Partnership = db.models.partnership
 module.exports.Game = db.models.game
+module.exports.DailyChallengeRequest = db.models.daily_challenge_request
+module.exports.DailyChallengeEntry = db.models.daily_challenge_entry
