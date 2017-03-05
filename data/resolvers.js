@@ -1,32 +1,25 @@
 var Sequelize = require("sequelize");
 
 var dailyChallenge = require("../util/dailyChallenge");
-var models = require("./models");
+var db = require("./db");
 var notifications = require("../notifications");
 var words = require("./words");
 
 var resolvers = {
   Query: {
-    user(_, args) {
-      return models.User.findById(args.id);
+    user(_, args, context) {
+      return context.loaders.userById.load(args.id);
     },
-    partnership(_, args) {
-      return models.Partnership.findById(args.id);
+    partnership(_, args, context) {
+      return context.loaders.partnershipById.load(args.id);
     },
-    game(_, args) {
-      return models.Game.findById(args.id);
+    game(_, args, context) {
+      return context.loaders.gameById.load(args.id);
     },
   },
   User: {
     partnerships(obj) {
-      return models.Partnership.findAll({
-        where: {
-          $or: {
-            user1Id: obj.id,
-            user2Id: obj.id
-          }
-        }
-      })
+      return db.partnershipsByUserId(obj.id);
     },
     dailyChallengeInfo(obj) {
       return {
@@ -35,18 +28,12 @@ var resolvers = {
     },
   },
   Partnership: {
-    users(obj) {
-      return models.User.findAll({
-        where: {
-          id: {
-            $in: [obj.user1Id, obj.user2Id]
-          }
-        }
-      });
+    users(obj, _, context) {
+      return context.loaders.userById.loadMany([obj.user1Id, obj.user2Id]);
     },
-    partner(obj, args) {
+    partner(obj, args, context) {
       var partnerId = (obj.user1Id === args.userId) ? obj.user2Id : obj.user1Id;
-      return models.User.findById(partnerId);
+      return context.loaders.userById.load(partnerId);
     },
     games(obj) {
       return obj.getGames();
@@ -65,45 +52,16 @@ var resolvers = {
   },
   DailyChallengeInfo: {
     incomingRequests(obj) {
-      return models.DailyChallengeRequest.findAll({
-        where: {
-          $and: {
-            date: dailyChallenge.getCurrentDateStr(),
-            toUserId: obj.userId
-          }
-        }
-      })
+      return db.incomingDailyChallengeRequests(obj.userId);
     },
     outgoingRequests(obj) {
-      return models.DailyChallengeRequest.findAll({
-        where: {
-          $and: {
-            date: dailyChallenge.getCurrentDateStr(),
-            fromUserId: obj.userId
-          }
-        }
-      })
+      return db.outgoingDailyChallengeRequests(obj.userId);
     },
-    games(obj) {
-      return models.DailyChallengeEntry.findOne({
-        where: {
-          $and: {
-            date: dailyChallenge.getCurrentDateStr(),
-            $or: {
-              user1Id: obj.userId,
-              user2Id: obj.userId
-            }
-          }
-        }
-      }).then(function(entry) {
+    games(obj, _, context) {
+      return db.dailyChallengeEntry(obj.userId).then((entry) => {
         if (entry) {
-          return models.Game.findAll({
-            where: {
-              id: {
-                $in: [entry.game1Id, entry.game2Id]
-              }
-            }
-          });
+          return context.loaders.gameById.loadMany(
+            [entry.game1Id, entry.game2Id]);
         } else {
           return [];
         }
@@ -111,27 +69,23 @@ var resolvers = {
     },
   },
   DailyChallengeRequest: {
-    partner(obj, args) {
+    partner(obj, args, context) {
       var partnerId = (obj.fromUserId === args.userId) ?
         obj.toUserId : obj.fromUserId;
-      return models.User.findById(partnerId);
+      return context.loaders.userById.load(partnerId);
     },
   },
   Mutation: {
-    updateUser(_, args) {
-      return models.User.findById(args.id).then(function(user) {
-        if (!user) {
-          user = models.User.build({id: args.id});
-        }
-        return user.update(args);
-      });
+    updateUser(_, args, context) {
+      return context.loaders.userById.load(args.id).then(
+        (user) => db.updateUser(user, args));
     },
-    addPushToken(_, args) {
-      return models.User.findById(args.userId).then(function(user) {
+    addPushToken(_, args, context) {
+      return context.loaders.userById.load(args.userId).then((user) => {
         if (user.pushTokens && user.pushTokens.includes(args.pushToken)) {
           return user;
         } else {
-          return user.update({
+          return db.updateUser(user, {
             pushTokens: user.pushTokens ?
               user.pushTokens.concat([args.pushToken]) : [args.pushToken]
           });
@@ -139,109 +93,60 @@ var resolvers = {
       });
     },
     newGame(_, args) {
-      var user1Id = (args.cluerId < args.guesserId) ?
-        args.cluerId : args.guesserId;
-      var user2Id = (args.cluerId < args.guesserId) ?
-        args.guesserId : args.cluerId;
-      return models.Partnership.findOne({
-        where: {
-          user1Id: user1Id,
-          user2Id: user2Id
-        }
-      }).then(function(partnership) {
-        var createGame = function(partnership) {
-          return models.Game.create({
-            word: words[Math.floor(Math.random() * words.length)],
-            cluerId: args.cluerId,
-            partnershipId: partnership.id
-          });
-        };
-
-        if (partnership) {
-          return createGame(partnership);
-        } else {
-          return models.Partnership.create({
-            user1Id: user1Id,
-            user2Id: user2Id
-          }).then(function(partnership) {
-            return createGame(partnership);
-          });
-        }
-      });
+      return db.partnershipByUserIds(args.cluerId, args.guesserId).then(
+        (partnership) => {
+          var word = words[Math.floor(Math.random() * words.length)];
+          if (partnership) {
+            return db.createGame(word, args.cluerId, partnership);
+          } else {
+            return db.createPartnership(user1Id, user2Id).then(
+              (partnership) => db.createGame(word, args.cluerId, partnership));
+          }
+        });
     },
-    giveClues(_, args) {
-      return models.Game.findById(args.gameId).then(function(game) {
-        return game.update({clues: args.clues}).then(function(game) {
+    giveClues(_, args, context) {
+      return context.loaders.gameById.load(args.gameId).then((game) => (
+        game.update({clues: args.clues}).then((game) => {
           notifications.notifyCluesGiven(game);
           return game;
-        });
-      });
+        })
+      ));
     },
-    makeGuesses(_, args) {
-      return models.Game.findById(args.gameId).then(function(game) {
-        return game.update({guesses: args.guesses}).then(function(game) {
+    makeGuesses(_, args, context) {
+      return context.loaders.gameById.load(args.gameId).then((game) => (
+        game.update({guesses: args.guesses}).then((game) => {
           notifications.notifyGuessesMade(game);
           return game;
-        });
-      });
+        })
+      ));
     },
     sendDailyChallengeRequest(_, args) {
-      return models.DailyChallengeRequest.create({
-        date: dailyChallenge.getCurrentDateStr(),
-        fromUserId: args.fromUserId,
-        toUserId: args.toUserId
-      });
+      return db.createDailyChallengeRequest(args.fromUserId, args.toUserId);
     },
-    acceptDailyChallengeRequest(_, args) {
-      return models.DailyChallengeRequest.findById(args.requestId).then(
-        function(request) {
-          var user1Id = (request.fromUserId < request.toUserId) ?
-            request.fromUserId : request.toUserId;
-          var user2Id = (request.fromUserId < request.toUserId) ?
-            request.toUserId : request.fromUserId;
-          return models.Partnership.findOne({
-            where: {
-              user1Id: user1Id,
-              user2Id: user2Id
-            }
-          }).then(function(partnership) {
-            var createGames = function(partnership) {
-              var words = dailyChallenge.getWordsForDate(request.date);
-              return Sequelize.Promise.all([
-                models.Game.create({
-                  word: words[0],
-                  cluerId: user1Id,
-                  partnershipId: partnership.id
-                }),
-                models.Game.create({
-                  word: words[1],
-                  cluerId: user2Id,
-                  partnershipId: partnership.id
-                })
-              ]).spread(function(game1, game2) {
-                return models.DailyChallengeEntry.create({
-                  date: request.date,
-                  user1Id: user1Id,
-                  user2Id: user2Id,
-                  game1Id: game1.id,
-                  game2Id: game2.id
-                }).then(function(entry) {
-                  return [game1, game2];
+    acceptDailyChallengeRequest(_, args, context) {
+      return context.loaders.dailyChallengeRequestById.load(
+        args.requestId).then((request) => {
+          return db.partnershipByUserIds(
+            request.fromUserId, request.toUserId).then((partnership) => {
+              var createGames = (partnership) => {
+                var words = dailyChallenge.getWordsForDate(request.date);
+                return Sequelize.Promise.all([
+                  db.createGame(words[0], user1Id, partnership),
+                  db.createGame(words[1], user2Id, partnership),
+                ]).spread((game1, game2) => {
+                  db.createDailyChallengeEntry(
+                    request.date, user1Id, user2Id, game1, game2).then(
+                      (entry) => [game1, game2]);
                 });
-              });
-            };
+              };
 
-            if (partnership) {
-              return createGames(partnership);
-            } else {
-              return models.Partnership.create({
-                user1Id: user1Id,
-                user2Id: user2Id
-              }).then(function(partnership) {
+              if (partnership) {
                 return createGames(partnership);
-              });
-            }
-          });
+              } else {
+                return db.createPartnership(user1Id, user2Id).then(
+                  (partnership) => createGames(partnership));
+              }
+            });
         });
     },
   }

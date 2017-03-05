@@ -4,18 +4,18 @@ var models = require("./data/models");
 
 var exponent = new Exponent();
 
-var notifyTurnEnded = function(game, cluesGiven) {
-  models.Partnership.findById(game.partnershipId).then(function(partnership) {
+var notifyTurnEnded = (game, cluesGiven) => {
+  models.Partnership.findById(game.partnershipId).then((partnership) => {
     models.User.findAll({
       where: {
         id: {
           $in: [partnership.user1Id, partnership.user2Id]
         }
       }
-    }).then(function(users) {
+    }).then((users) => {
       var sender;
       var recipient;
-      users.forEach(function(user) {
+      users.forEach((user) => {
         if (user.id === game.cluerId && cluesGiven ||
             user.id !== game.cluerId && !cluesGiven) {
           sender = user;
@@ -27,27 +27,20 @@ var notifyTurnEnded = function(game, cluesGiven) {
         var message = cluesGiven ?
           sender.firstName + " just went, it's your turn!" :
           sender.firstName + " just finished, see what happened!"
-        var notifications = recipient.pushTokens.map(function(pushToken) {
-          return {
-            to: pushToken,
-            sound: "default",
-            body: message,
-            data: {
-              gameId: game.id,
-              cluesGiven: cluesGiven
-            }
-          };
-        });
+        var notifications = recipient.pushTokens.map((pushToken) => ({
+          to: pushToken,
+          sound: "default",
+          body: message,
+          data: {
+            gameId: game.id,
+            cluesGiven: cluesGiven
+          }
+        }));
         exponent.sendPushNotificationsAsync(notifications);
       }
     })
   });
 }
 
-module.exports.notifyCluesGiven = function(game) {
-  notifyTurnEnded(game, true);
-}
-
-module.exports.notifyGuessesMade = function(game) {
-  notifyTurnEnded(game, false);
-}
+module.exports.notifyCluesGiven = (game) => notifyTurnEnded(game, true);
+module.exports.notifyGuessesMade = (game) => notifyTurnEnded(game, false);
