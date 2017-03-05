@@ -16,6 +16,19 @@ var resolvers = {
     game(_, args, context) {
       return context.loaders.gameById.load(args.id);
     },
+    possibleWords(_, args, context) {
+      return db.partnershipByUserIds(args.cluerId, args.guesserId).then(
+        (partnership) => {
+          if (partnership) {
+            return partnership.getGames().then((games) => {
+              var blacklist = games.map((game) => game.word);
+              return words.possibleWords(args.numWords, blacklist)
+            });
+          } else {
+            return words.possibleWords(args.numWords, []);
+          }
+        });
+    }
   },
   User: {
     partnerships(obj) {
@@ -97,10 +110,12 @@ var resolvers = {
         (partnership) => {
           var word = words[Math.floor(Math.random() * words.length)];
           if (partnership) {
-            return db.createGame(word, args.cluerId, partnership);
+            return db.createGame(args.word, args.cluerId, partnership);
           } else {
             return db.createPartnership(user1Id, user2Id).then(
-              (partnership) => db.createGame(word, args.cluerId, partnership));
+              (partnership) => (
+                db.createGame(args.word, args.cluerId, partnership)
+              ));
           }
         });
     },

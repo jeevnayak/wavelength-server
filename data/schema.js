@@ -42,6 +42,7 @@ type Query {
   user(id: String!): User
   partnership(id: Int!): Partnership
   game(id: Int!): Game
+  possibleWords(cluerId: String!, guesserId: String!, numWords: Int!): [String]!
 }
 
 type Mutation {
@@ -61,6 +62,7 @@ type Mutation {
   newGame(
     cluerId: String!,
     guesserId: String!,
+    word: String!
   ) : Game
 
   giveClues(

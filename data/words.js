@@ -1,4 +1,4 @@
-module.exports = [
+var words = [
   "GRASS",
   "POLYGAMY",
   "SORE",
@@ -365,3 +365,15 @@ module.exports = [
   "GOOGLE",
   "SAFEWAY",
 ]
+
+module.exports.possibleWords = (numWords, blacklist) => {
+  var possibleWords = [];
+  while (possibleWords.length < numWords) {
+    var possibleWord = words[Math.floor(Math.random() * words.length)];
+    if (possibleWords.indexOf(possibleWord) === -1 &&
+        blacklist.indexOf(possibleWord) === -1) {
+      possibleWords.push(possibleWord);
+    }
+  }
+  return possibleWords;
+}
