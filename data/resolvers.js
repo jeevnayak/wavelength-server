@@ -1,5 +1,3 @@
-var Sequelize = require("sequelize");
-
 var dailyChallenge = require("../util/dailyChallenge");
 var db = require("./db");
 var notifications = require("../notifications");
@@ -7,32 +5,29 @@ var words = require("./words");
 
 var resolvers = {
   Query: {
-    user(_, args, context) {
-      return context.loaders.userById.load(args.id);
+    async user(_, args, context) {
+      return await context.loaders.userById.load(args.id);
     },
-    partnership(_, args, context) {
-      return context.loaders.partnershipById.load(args.id);
+    async partnership(_, args, context) {
+      return await context.loaders.partnershipById.load(args.id);
     },
-    game(_, args, context) {
-      return context.loaders.gameById.load(args.id);
+    async game(_, args, context) {
+      return await context.loaders.gameById.load(args.id);
     },
-    possibleWords(_, args, context) {
-      return db.partnershipByUserIds(args.cluerId, args.guesserId).then(
-        (partnership) => {
-          if (partnership) {
-            return partnership.getGames().then((games) => {
-              var blacklist = games.map((game) => game.word);
-              return words.possibleWords(args.numWords, blacklist)
-            });
-          } else {
-            return words.possibleWords(args.numWords, []);
-          }
-        });
+    async possibleWords(_, args, context) {
+      var partnership = await db.partnershipByUserIds(
+        args.cluerId, args.guesserId);
+      var blacklist = [];
+      if (partnership) {
+        var games = await partnership.getGames();
+        blacklist = games.map((game) => game.word);
+      }
+      return words.possibleWords(args.numWords, blacklist);
     }
   },
   User: {
-    partnerships(obj) {
-      return db.partnershipsByUserId(obj.id);
+    async partnerships(obj) {
+      return await db.partnershipsByUserId(obj.id);
     },
     dailyChallengeInfo(obj) {
       return {
@@ -41,15 +36,16 @@ var resolvers = {
     },
   },
   Partnership: {
-    users(obj, _, context) {
-      return context.loaders.userById.loadMany([obj.user1Id, obj.user2Id]);
+    async users(obj, _, context) {
+      return await context.loaders.userById.loadMany(
+        [obj.user1Id, obj.user2Id]);
     },
-    partner(obj, args, context) {
+    async partner(obj, args, context) {
       var partnerId = (obj.user1Id === args.userId) ? obj.user2Id : obj.user1Id;
-      return context.loaders.userById.load(partnerId);
+      return await context.loaders.userById.load(partnerId);
     },
-    games(obj) {
-      return obj.getGames();
+    async games(obj) {
+      return await obj.getGames();
     },
   },
   Game: {
@@ -64,105 +60,86 @@ var resolvers = {
     },
   },
   DailyChallengeInfo: {
-    incomingRequests(obj) {
-      return db.incomingDailyChallengeRequests(obj.userId);
+    async incomingRequests(obj) {
+      return await db.incomingDailyChallengeRequests(obj.userId);
     },
-    outgoingRequests(obj) {
-      return db.outgoingDailyChallengeRequests(obj.userId);
+    async outgoingRequests(obj) {
+      return await db.outgoingDailyChallengeRequests(obj.userId);
     },
-    games(obj, _, context) {
-      return db.dailyChallengeEntry(obj.userId).then((entry) => {
-        if (entry) {
-          return context.loaders.gameById.loadMany(
-            [entry.game1Id, entry.game2Id]);
-        } else {
-          return [];
-        }
-      })
+    async games(obj, _, context) {
+      var entry = await db.dailyChallengeEntry(obj.userId);
+      if (entry) {
+        return await context.loaders.gameById.loadMany(
+          [entry.game1Id, entry.game2Id]);
+      } else {
+        return [];
+      }
     },
   },
   DailyChallengeRequest: {
-    partner(obj, args, context) {
+    async partner(obj, args, context) {
       var partnerId = (obj.fromUserId === args.userId) ?
         obj.toUserId : obj.fromUserId;
-      return context.loaders.userById.load(partnerId);
+      return await context.loaders.userById.load(partnerId);
     },
   },
   Mutation: {
-    updateUser(_, args, context) {
-      return context.loaders.userById.load(args.id).then(
-        (user) => db.updateUser(user, args));
+    async updateUser(_, args, context) {
+      var user = await context.loaders.userById.load(args.id);
+      return await db.updateUser(user, args);
     },
-    addPushToken(_, args, context) {
-      return context.loaders.userById.load(args.userId).then((user) => {
-        if (user.pushTokens && user.pushTokens.includes(args.pushToken)) {
-          return user;
-        } else {
-          return db.updateUser(user, {
-            pushTokens: user.pushTokens ?
-              user.pushTokens.concat([args.pushToken]) : [args.pushToken]
-          });
-        }
-      });
-    },
-    newGame(_, args) {
-      return db.partnershipByUserIds(args.cluerId, args.guesserId).then(
-        (partnership) => {
-          var word = words[Math.floor(Math.random() * words.length)];
-          if (partnership) {
-            return db.createGame(args.word, args.cluerId, partnership);
-          } else {
-            return db.createPartnership(user1Id, user2Id).then(
-              (partnership) => (
-                db.createGame(args.word, args.cluerId, partnership)
-              ));
-          }
+    async addPushToken(_, args, context) {
+      var user = await context.loaders.userById.load(args.userId);
+      if (user.pushTokens && user.pushTokens.includes(args.pushToken)) {
+        return user;
+      } else {
+        return await db.updateUser(user, {
+          pushTokens: user.pushTokens ?
+            user.pushTokens.concat([args.pushToken]) : [args.pushToken]
         });
+      }
     },
-    giveClues(_, args, context) {
-      return context.loaders.gameById.load(args.gameId).then((game) => (
-        game.update({clues: args.clues}).then((game) => {
-          notifications.notifyCluesGiven(game);
-          return game;
-        })
-      ));
+    async newGame(_, args) {
+      var partnership = await db.partnershipByUserIds(
+        args.cluerId, args.guesserId);
+      if (!partnership) {
+        partnership = await db.createPartnership(args.cluerId, args.guesserId);
+      }
+      return await db.createGame(args.word, args.cluerId, partnership);
     },
-    makeGuesses(_, args, context) {
-      return context.loaders.gameById.load(args.gameId).then((game) => (
-        game.update({guesses: args.guesses}).then((game) => {
-          notifications.notifyGuessesMade(game);
-          return game;
-        })
-      ));
+    async giveClues(_, args, context) {
+      var game = await context.loaders.gameById.load(args.gameId);
+      game = await game.update({clues: args.clues});
+      notifications.notifyCluesGiven(game);
+      return game;
     },
-    sendDailyChallengeRequest(_, args) {
-      return db.createDailyChallengeRequest(args.fromUserId, args.toUserId);
+    async makeGuesses(_, args, context) {
+      var game = await context.loaders.gameById.load(args.gameId);
+      game = await game.update({guesses: args.guesses});
+      notifications.notifyGuessesMade(game);
+      return game;
     },
-    acceptDailyChallengeRequest(_, args, context) {
-      return context.loaders.dailyChallengeRequestById.load(
-        args.requestId).then((request) => {
-          return db.partnershipByUserIds(
-            request.fromUserId, request.toUserId).then((partnership) => {
-              var createGames = (partnership) => {
-                var words = dailyChallenge.getWordsForDate(request.date);
-                return Sequelize.Promise.all([
-                  db.createGame(words[0], user1Id, partnership),
-                  db.createGame(words[1], user2Id, partnership),
-                ]).spread((game1, game2) => {
-                  db.createDailyChallengeEntry(
-                    request.date, user1Id, user2Id, game1, game2).then(
-                      (entry) => [game1, game2]);
-                });
-              };
-
-              if (partnership) {
-                return createGames(partnership);
-              } else {
-                return db.createPartnership(user1Id, user2Id).then(
-                  (partnership) => createGames(partnership));
-              }
-            });
-        });
+    async sendDailyChallengeRequest(_, args) {
+      return await db.createDailyChallengeRequest(
+        args.fromUserId, args.toUserId);
+    },
+    async acceptDailyChallengeRequest(_, args, context) {
+      var request = await context.loaders.dailyChallengeRequestById.load(
+        args.requestId);
+      var partnership = await db.partnershipByUserIds(
+        request.fromUserId, request.toUserId);
+      if (!partnership) {
+        partnership = await db.createPartnership(
+          request.fromUserId, request.toUserId);
+      }
+      var words = dailyChallenge.getWordsForDate(request.date);
+      var games = await Promise.all([
+        db.createGame(words[0], request.fromUserId, partnership),
+        db.createGame(words[1], request.toUserId, partnership),
+      ]);
+      var entry = await db.createDailyChallengeEntry(
+        request.date, request.fromUserId, request.toUserId, games[0], games[1]);
+      return games;
     },
   }
 };
