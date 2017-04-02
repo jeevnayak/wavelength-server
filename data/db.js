@@ -87,7 +87,9 @@ module.exports.createDailyChallengeRequest = async function(
 };
 
 module.exports.createDailyChallengeEntry = async function(
-    date, user1Id, user2Id, game1, game2) {
+    date, userId1, userId2, game1, game2) {
+  var user1Id = (userId1 < userId2) ? userId1 : userId2;
+  var user2Id = (userId1 < userId2) ? userId2 : userId1;
   return await models.DailyChallengeEntry.create({
     date: date,
     user1Id: user1Id,

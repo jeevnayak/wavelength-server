@@ -58,6 +58,9 @@ var resolvers = {
     guesses(obj) {
       return obj.guesses || [];
     },
+    async partnership(obj, _, context) {
+      return await context.loaders.partnershipById.load(obj.partnershipId);
+    },
   },
   DailyChallengeInfo: {
     async incomingRequests(obj) {
