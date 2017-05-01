@@ -58,6 +58,10 @@ var resolvers = {
     guesses(obj) {
       return obj.guesses || [];
     },
+    lastUpdated(obj) {
+      // TODO(rajeev): this should only be updated after clues and guesses
+      return obj.updatedAt.getTime().toString();
+    },
     async partnership(obj, _, context) {
       return await context.loaders.partnershipById.load(obj.partnershipId);
     },

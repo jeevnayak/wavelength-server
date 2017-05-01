@@ -23,6 +23,7 @@ type Game {
   isCluer(userId: String!): Boolean!
   clues: [String]!
   guesses: [String]!
+  lastUpdated: String!
   replayed: Boolean
   partnership: Partnership!
 }
