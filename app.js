@@ -16,12 +16,13 @@ var executableSchema = graphqlTools.makeExecutableSchema({
   resolvers: resolvers
 });
 
-app.use("/graphql", bodyParser.json(), graphqlServerExpress.graphqlExpress({
-  schema: executableSchema,
-  context: {
-    loaders: loaders.createLoaders()
-  }
-}));
+app.use("/graphql", bodyParser.json(), graphqlServerExpress.graphqlExpress(
+  (req) => ({
+    schema: executableSchema,
+    context: {
+      loaders: loaders.createLoaders()
+    }
+  })));
 
 app.use("/graphiql", graphqlServerExpress.graphiqlExpress({
   endpointURL: "/graphql"
