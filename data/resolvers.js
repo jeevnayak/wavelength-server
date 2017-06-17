@@ -47,6 +47,24 @@ var resolvers = {
     async games(obj) {
       return await obj.getGames();
     },
+    async numPendingGames(obj, args) {
+      var partnerId = (obj.user1Id === args.userId) ? obj.user2Id : obj.user1Id;
+      var games = await obj.getGames();
+      var numPendingGames = 0;
+      for (var game of games) {
+        if (game.cluerId === args.userId) {
+          if (!game.clues || game.clues.length < 4) {
+            numPendingGames++;
+          }
+        } else {
+          if (game.clues && game.clues.length >= 4 &&
+              (!game.guesses || game.guesses.length < 4)) {
+            numPendingGames++;
+          }
+        }
+      }
+      return numPendingGames;
+    },
     async averageScore(obj) {
       var games = await obj.getGames();
       var scores = [];
