@@ -14,6 +14,7 @@ type Partnership {
   users: [User]!
   partner(userId: String!): User!
   games: [Game]!
+  averageScore: Int
 }
 
 type Game {

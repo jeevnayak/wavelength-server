@@ -47,6 +47,37 @@ var resolvers = {
     async games(obj) {
       return await obj.getGames();
     },
+    async averageScore(obj) {
+      var games = await obj.getGames();
+      var scores = [];
+      for (var game of games) {
+        if (!game.clues || game.clues.length < 4 ||
+            !game.guesses || game.guesses.length < 4) {
+          continue;
+        }
+        var scoreByNumIncorrect = [50, 30, 20, 10];
+        var numIncorrect = 0;
+        var guessedWord = false;
+        var score = 0;
+        for (var i = 0; i < game.guesses.length; i++) {
+          var guess = game.guesses[i];
+          var correct = guessedWord ?
+            (guess === game.clues[i]) : (guess === game.word);
+          if (correct) {
+            guessedWord = true;
+            score += scoreByNumIncorrect[numIncorrect];
+          } else {
+            numIncorrect++;
+          }
+        }
+        scores.push(score);
+      }
+      if (scores.length) {
+        return scores.reduce((a, b) => a + b) / scores.length;
+      } else {
+        return null;
+      }
+    },
   },
   Game: {
     isCluer(obj, args) {
