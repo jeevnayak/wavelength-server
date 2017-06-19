@@ -33,6 +33,7 @@ async function notifyTurnEnded(game, cluesGiven) {
       body: message,
       data: {
         gameId: game.id,
+        partnershipId: partnership.id,
         cluesGiven: cluesGiven
       }
     }));

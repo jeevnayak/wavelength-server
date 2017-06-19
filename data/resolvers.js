@@ -40,6 +40,9 @@ var resolvers = {
       return await context.loaders.userById.loadMany(
         [obj.user1Id, obj.user2Id]);
     },
+    async user(obj, args, context) {
+      return await context.loaders.userById.load(args.userId);
+    },
     async partner(obj, args, context) {
       var partnerId = (obj.user1Id === args.userId) ? obj.user2Id : obj.user1Id;
       return await context.loaders.userById.load(partnerId);

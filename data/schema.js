@@ -12,6 +12,7 @@ type User {
 type Partnership {
   id: Int!
   users: [User]!
+  user(userId: String!): User!
   partner(userId: String!): User!
   games: [Game]!
   numPendingGames(userId: String!): Int!
