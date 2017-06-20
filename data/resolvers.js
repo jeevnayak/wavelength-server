@@ -56,7 +56,8 @@ var resolvers = {
       var numPendingGames = 0;
       for (var game of games) {
         if (game.cluerId === args.userId) {
-          if (!game.clues || game.clues.length < 4) {
+          if ((!game.clues || game.clues.length < 4) ||
+              (game.guesses && game.guesses.length >= 4 && !game.replayed)) {
             numPendingGames++;
           }
         } else {
