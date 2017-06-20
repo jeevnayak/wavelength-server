@@ -73,7 +73,8 @@ module.exports.createGame = async function(word, cluerId, partnership) {
   return await models.Game.create({
     word: word,
     cluerId: cluerId,
-    partnershipId: partnership.id
+    partnershipId: partnership.id,
+    updated: new Date()
   });
 };
 

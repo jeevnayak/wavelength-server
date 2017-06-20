@@ -54,7 +54,8 @@ const Game = db.define("game", {
   word: Sequelize.STRING,
   clues: Sequelize.ARRAY(Sequelize.STRING),
   guesses: Sequelize.ARRAY(Sequelize.STRING),
-  replayed: Sequelize.BOOLEAN
+  replayed: Sequelize.BOOLEAN,
+  updated: Sequelize.DATE,
 });
 
 Partnership.hasMany(Game);

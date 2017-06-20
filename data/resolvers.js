@@ -111,8 +111,9 @@ var resolvers = {
       return obj.guesses || [];
     },
     lastUpdated(obj) {
-      // TODO(rajeev): this should only be updated after clues and guesses
-      return obj.updatedAt.getTime().toString();
+      // Note: updatedAt is a fallback for games predating the updated column
+      var updatedDate = obj.updated || obj.updatedAt;
+      return updatedDate.getTime().toString();
     },
     async partnership(obj, _, context) {
       return await context.loaders.partnershipById.load(obj.partnershipId);
@@ -168,15 +169,25 @@ var resolvers = {
     },
     async giveClues(_, args, context) {
       var game = await context.loaders.gameById.load(args.gameId);
-      game = await game.update({clues: args.clues});
+      game = await game.update({
+        clues: args.clues,
+        updated: new Date(),
+      });
       notifications.notifyCluesGiven(game);
       return game;
     },
     async makeGuesses(_, args, context) {
       var game = await context.loaders.gameById.load(args.gameId);
-      game = await game.update({guesses: args.guesses});
+      game = await game.update({
+        guesses: args.guesses,
+        updated: new Date(),
+      });
       notifications.notifyGuessesMade(game);
       return game;
+    },
+    async markReplayed(_, args, context) {
+      var game = await context.loaders.gameById.load(args.gameId);
+      return await game.update({replayed: true});
     },
     async sendDailyChallengeRequest(_, args) {
       return await db.createDailyChallengeRequest(

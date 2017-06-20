@@ -79,6 +79,10 @@ type Mutation {
     guesses: [String]!,
   ) : Game
 
+  markReplayed(
+    gameId: Int!,
+  ) : Game
+
   sendDailyChallengeRequest(
     fromUserId: String!,
     toUserId: String!,
