@@ -77,17 +77,22 @@ var resolvers = {
             !game.guesses || game.guesses.length < 4) {
           continue;
         }
-        var scoreByNumIncorrect = [50, 30, 20, 10];
+        var scoreByNumIncorrect = [250, 150, 100];
         var numIncorrect = 0;
         var guessedWord = false;
         var score = 0;
         for (var i = 0; i < game.guesses.length; i++) {
           var guess = game.guesses[i];
           var correct = guessedWord ?
-            (guess === game.clues[i]) : (guess === game.word);
+            (guess === game.clues[i]) :
+            (guess === game.word.split(" ").join(""));
           if (correct) {
-            guessedWord = true;
-            score += scoreByNumIncorrect[numIncorrect];
+            if (guessedWord) {
+              score += scoreByNumIncorrect[numIncorrect];
+            } else {
+              score += scoreByNumIncorrect[0];
+              guessedWord = true;
+            }
           } else {
             numIncorrect++;
           }
