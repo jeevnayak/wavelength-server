@@ -25,8 +25,8 @@ async function notifyTurnEnded(game, cluesGiven) {
   });
   if (recipient.pushTokens) {
     var message = cluesGiven ?
-      sender.firstName + " just went, it's your turn!" :
-      sender.firstName + " just finished, see what happened!"
+      sender.firstName + " just gave you clues. Guess the word!" :
+      sender.firstName + " just finished guessing. See what happened!"
     var notifications = recipient.pushTokens.map((pushToken) => ({
       to: pushToken,
       sound: "default",
